@@ -8,6 +8,7 @@ import { IERC721 } from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import { IERC1155 } from "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import { Address } from "@openzeppelin/contracts/utils/Address.sol";
+import "./Types.sol";
 
 contract TokenAssistant is ReentrancyGuard {
     address wrappedNativeToken;
@@ -63,5 +64,19 @@ contract TokenAssistant is ReentrancyGuard {
         SafeERC20.safeTransferFrom(IERC20(wrappedNativeToken), msg.sender, address(this), amount);
         IWrappedNativeToken(wrappedNativeToken).withdraw(amount);
         Address.sendValue(to, amount);
+    }
+
+    // Also support Native Token balance query, just specify the address with address(0)
+    function balanceOfTokenBatch(address[] calldata tokens, address[] calldata targets) public view returns (BlockInfo memory blockInfo, uint[][] memory balances) {
+        balances = new uint[][](targets.length);
+        for (uint i = 0; i < targets.length; i++) {
+            balances[i] = new uint[](tokens.length);
+
+            for(uint j = 0; j < tokens.length;i++) {
+                balances[i][j] = tokens[j] == address(0) ? targets[i].balance : IERC20(tokens[j]).balanceOf(targets[i]);
+            }
+        }
+
+        blockInfo = BlockInfo(block.number, block.timestamp);
     }
 }
