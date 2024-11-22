@@ -56,5 +56,12 @@ contract TokenAssistant is ReentrancyGuard {
     function wrapNativeToken(uint amount, address to) public payable nonReentrant {
         require(msg.value == amount, AmountAndMsgValueMissmatch());
         IWrappedNativeToken(wrappedNativeToken).deposit{value: msg.value}();
+        SafeERC20.safeTransfer(IERC20(wrappedNativeToken), to, amount);
+    }
+
+    function unwrapNativeToken(uint amount, address payable to) public nonReentrant {
+        SafeERC20.safeTransferFrom(IERC20(wrappedNativeToken), msg.sender, address(this), amount);
+        IWrappedNativeToken(wrappedNativeToken).withdraw(amount);
+        Address.sendValue(to, amount);
     }
 }
